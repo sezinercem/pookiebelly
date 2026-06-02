@@ -7,16 +7,26 @@ const SUPABASE_ANON_KEY =
 const TABLE_NAME = "pookie_love_taps";
 const PEOPLE = ["person_one", "person_two"];
 const DEFAULT_NAMES = {
-  person_one: "Me",
-  person_two: "My Pookie",
+  person_one: "Cem",
+  person_two: "Daisy",
 };
 const STORAGE_KEY = "pookie-smelly-belly-state";
+const CUTE_MESSAGES = [
+  "Every tap is a tiny love letter.",
+  "Daisy gets bonus sparkle points today.",
+  "Cem is absolutely thinking about Daisy.",
+  "This button contains scientifically suspicious amounts of love.",
+  "Current pookie forecast: bright, silly, and very loved.",
+  "A bad day cannot defeat this much cute.",
+];
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const elements = {
   status: document.querySelector("#cloudStatus"),
   lastTap: document.querySelector("#lastTap"),
+  totalCount: document.querySelector("#totalCount"),
+  cuteMessage: document.querySelector("#cuteMessage"),
   sync: document.querySelector("#syncButton"),
   buttons: {
     person_one: document.querySelector("#personOneButton"),
@@ -38,9 +48,9 @@ let state = loadLocalState();
 
 hydrateNames();
 render();
-await syncFromCloud();
 attachEvents();
 startRealtime();
+syncFromCloud();
 
 function attachEvents() {
   elements.buttons.person_one.addEventListener("click", (event) => {
@@ -71,6 +81,7 @@ async function handleTap(person, event) {
   render();
   popButton(button);
   burstHeart(event);
+  maybeCelebrateMilestone();
 
   const { error } = await supabase.from(TABLE_NAME).insert({
     person,
@@ -159,6 +170,10 @@ function startRealtime() {
 }
 
 function render() {
+  const total = state.counts.person_one + state.counts.person_two;
+  elements.totalCount.textContent = total.toLocaleString();
+  elements.cuteMessage.textContent = CUTE_MESSAGES[total % CUTE_MESSAGES.length];
+
   for (const person of PEOPLE) {
     const displayName = state.names[person] || DEFAULT_NAMES[person];
     elements.buttons[person].querySelector(".circle-name").textContent = displayName;
@@ -179,6 +194,18 @@ function render() {
   })}`;
 }
 
+function maybeCelebrateMilestone() {
+  const total = state.counts.person_one + state.counts.person_two;
+
+  if (total > 0 && total % 10 === 0) {
+    const banner = document.createElement("div");
+    banner.className = "milestone-toast";
+    banner.textContent = `${total.toLocaleString()} love taps. Cem and Daisy are unstoppable.`;
+    document.body.append(banner);
+    window.setTimeout(() => banner.remove(), 2400);
+  }
+}
+
 function hydrateNames() {
   for (const person of PEOPLE) {
     state.names[person] ||= DEFAULT_NAMES[person];
@@ -194,8 +221,12 @@ function loadLocalState() {
         person_two: Number(saved?.counts?.person_two) || 0,
       },
       names: {
-        person_one: saved?.names?.person_one || DEFAULT_NAMES.person_one,
-        person_two: saved?.names?.person_two || DEFAULT_NAMES.person_two,
+        person_one: migrateSavedName(saved?.names?.person_one, "Me", DEFAULT_NAMES.person_one),
+        person_two: migrateSavedName(
+          saved?.names?.person_two,
+          "My Pookie",
+          DEFAULT_NAMES.person_two,
+        ),
       },
       lastTap: saved?.lastTap || null,
     };
@@ -206,6 +237,14 @@ function loadLocalState() {
       lastTap: null,
     };
   }
+}
+
+function migrateSavedName(savedName, oldDefault, newDefault) {
+  if (!savedName || savedName === oldDefault) {
+    return newDefault;
+  }
+
+  return savedName;
 }
 
 function saveLocalState() {
