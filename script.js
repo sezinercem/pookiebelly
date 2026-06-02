@@ -1,0 +1,238 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL = "https://jkydcpnmeawgxenekvzt.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpreWRjcG5tZWF3Z3hlbmVrdnp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MzA5NzksImV4cCI6MjA5NjAwNjk3OX0.wjzyEUZZWAmnDxads4qqwT9cDQY1RmIaf2zuCdj_fV8";
+
+const TABLE_NAME = "pookie_love_taps";
+const PEOPLE = ["person_one", "person_two"];
+const DEFAULT_NAMES = {
+  person_one: "Me",
+  person_two: "My Pookie",
+};
+const STORAGE_KEY = "pookie-smelly-belly-state";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const elements = {
+  status: document.querySelector("#cloudStatus"),
+  lastTap: document.querySelector("#lastTap"),
+  sync: document.querySelector("#syncButton"),
+  buttons: {
+    person_one: document.querySelector("#personOneButton"),
+    person_two: document.querySelector("#personTwoButton"),
+  },
+  counts: {
+    person_one: document.querySelector("#personOneCount"),
+    person_two: document.querySelector("#personTwoCount"),
+  },
+  names: {
+    person_one: document.querySelector("#personOneName"),
+    person_two: document.querySelector("#personTwoName"),
+  },
+};
+
+let cloudReady = false;
+let cloudWritable = false;
+let state = loadLocalState();
+
+hydrateNames();
+render();
+await syncFromCloud();
+attachEvents();
+startRealtime();
+
+function attachEvents() {
+  elements.buttons.person_one.addEventListener("click", (event) => {
+    handleTap("person_one", event);
+  });
+  elements.buttons.person_two.addEventListener("click", (event) => {
+    handleTap("person_two", event);
+  });
+  elements.sync.addEventListener("click", syncFromCloud);
+
+  for (const person of PEOPLE) {
+    elements.names[person].addEventListener("input", () => {
+      state.names[person] = elements.names[person].value.trim() || DEFAULT_NAMES[person];
+      saveLocalState();
+      render();
+    });
+  }
+}
+
+async function handleTap(person, event) {
+  const button = elements.buttons[person];
+  state.counts[person] += 1;
+  state.lastTap = {
+    person,
+    at: new Date().toISOString(),
+  };
+  saveLocalState();
+  render();
+  popButton(button);
+  burstHeart(event);
+
+  const { error } = await supabase.from(TABLE_NAME).insert({
+    person,
+    label: state.names[person],
+  });
+
+  if (error) {
+    cloudReady = false;
+    cloudWritable = false;
+    setStatus("Saved on this device", "local");
+    return;
+  }
+
+  cloudReady = true;
+  cloudWritable = true;
+  setStatus("Cloud memory on", "cloud");
+  await syncFromCloud({ quiet: true, preserveStatus: true });
+  setStatus("Cloud memory on", "cloud");
+}
+
+async function syncFromCloud(options = {}) {
+  if (!options.quiet) {
+    setStatus("Checking cloud", "loading");
+  }
+
+  const nextCounts = {};
+
+  for (const person of PEOPLE) {
+    const { count, error } = await supabase
+      .from(TABLE_NAME)
+      .select("id", { count: "exact", head: true })
+      .eq("person", person);
+
+    if (error) {
+      cloudReady = false;
+      cloudWritable = false;
+      setStatus("Local memory on", "local");
+      render();
+      return;
+    }
+
+    nextCounts[person] = count ?? 0;
+  }
+
+  const { data: latestTap } = await supabase
+    .from(TABLE_NAME)
+    .select("person, created_at")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  state.counts = {
+    person_one: Math.max(nextCounts.person_one, state.counts.person_one),
+    person_two: Math.max(nextCounts.person_two, state.counts.person_two),
+  };
+
+  if (latestTap?.person && latestTap?.created_at) {
+    const localTapTime = state.lastTap ? new Date(state.lastTap.at).getTime() : 0;
+    const cloudTapTime = new Date(latestTap.created_at).getTime();
+
+    if (cloudTapTime >= localTapTime) {
+      state.lastTap = {
+        person: latestTap.person,
+        at: latestTap.created_at,
+      };
+    }
+  }
+
+  cloudReady = true;
+  saveLocalState();
+  if (!options.preserveStatus) {
+    setStatus(cloudWritable ? "Cloud memory on" : "Cloud counts loaded", "cloud");
+  }
+  render();
+}
+
+function startRealtime() {
+  supabase
+    .channel("pookie-love-taps")
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: TABLE_NAME },
+      () => syncFromCloud({ quiet: true }),
+    )
+    .subscribe();
+}
+
+function render() {
+  for (const person of PEOPLE) {
+    const displayName = state.names[person] || DEFAULT_NAMES[person];
+    elements.buttons[person].querySelector(".circle-name").textContent = displayName;
+    elements.names[person].value = displayName;
+    elements.counts[person].textContent = state.counts[person].toLocaleString();
+  }
+
+  if (!state.lastTap) {
+    elements.lastTap.textContent = "No taps yet today";
+    return;
+  }
+
+  const name = state.names[state.lastTap.person] || DEFAULT_NAMES[state.lastTap.person];
+  const date = new Date(state.lastTap.at);
+  elements.lastTap.textContent = `${name} last tapped ${date.toLocaleString([], {
+    dateStyle: "medium",
+    timeStyle: "short",
+  })}`;
+}
+
+function hydrateNames() {
+  for (const person of PEOPLE) {
+    state.names[person] ||= DEFAULT_NAMES[person];
+  }
+}
+
+function loadLocalState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    return {
+      counts: {
+        person_one: Number(saved?.counts?.person_one) || 0,
+        person_two: Number(saved?.counts?.person_two) || 0,
+      },
+      names: {
+        person_one: saved?.names?.person_one || DEFAULT_NAMES.person_one,
+        person_two: saved?.names?.person_two || DEFAULT_NAMES.person_two,
+      },
+      lastTap: saved?.lastTap || null,
+    };
+  } catch {
+    return {
+      counts: { person_one: 0, person_two: 0 },
+      names: { ...DEFAULT_NAMES },
+      lastTap: null,
+    };
+  }
+}
+
+function saveLocalState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function setStatus(text, mode) {
+  elements.status.textContent = text;
+  elements.status.dataset.mode = mode;
+  elements.status.setAttribute(
+    "aria-label",
+    cloudReady ? "Cloud memory is connected" : "Cloud memory is not connected",
+  );
+}
+
+function popButton(button) {
+  button.classList.add("is-popping");
+  window.setTimeout(() => button.classList.remove("is-popping"), 180);
+}
+
+function burstHeart(event) {
+  const heart = document.createElement("span");
+  heart.className = "heart-burst";
+  heart.textContent = "♥";
+  heart.setAttribute("aria-hidden", "true");
+  heart.style.left = `${event.clientX}px`;
+  heart.style.top = `${event.clientY}px`;
+  document.body.append(heart);
+  window.setTimeout(() => heart.remove(), 900);
+}

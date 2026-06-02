@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pookie Smelly Belly</title>
+    <link rel="preconnect" href="https://jkydcpnmeawgxenekvzt.supabase.co" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="love-board" aria-label="Pookie Smelly Belly love counter">
+        <div class="title-row">
+          <p class="kicker">Pookie Smelly Belly</p>
+          <div class="cloud-status" id="cloudStatus">Warming up</div>
+        </div>
+
+        <h1>Tap the love circles</h1>
+
+        <div class="circle-grid">
+          <button class="love-circle love-circle--sunset" id="personOneButton" type="button">
+            <span class="circle-name">Me</span>
+            <span class="circle-count" id="personOneCount">0</span>
+            <span class="circle-caption">love taps</span>
+          </button>
+
+          <button class="love-circle love-circle--ocean" id="personTwoButton" type="button">
+            <span class="circle-name">My Pookie</span>
+            <span class="circle-count" id="personTwoCount">0</span>
+            <span class="circle-caption">love taps</span>
+          </button>
+        </div>
+
+        <div class="name-controls" aria-label="Rename love circles">
+          <label>
+            <span>Your circle</span>
+            <input id="personOneName" maxlength="24" autocomplete="off" />
+          </label>
+          <label>
+            <span>Her circle</span>
+            <input id="personTwoName" maxlength="24" autocomplete="off" />
+          </label>
+        </div>
+
+        <article class="love-note" aria-label="A love note for a bad day">
+          <p>For the days that feel heavy: you are my favorite person, my soft place, my brightest little chaos, and I am always thinking of you. Press your circle and remember that somewhere, somehow, I am loving you loudly.</p>
+        </article>
+
+        <div class="tiny-history">
+          <span id="lastTap">No taps yet today</span>
+          <button class="ghost-button" id="syncButton" type="button">Refresh</button>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
