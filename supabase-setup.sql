@@ -21,6 +21,13 @@ for insert
 to anon
 with check (person in ('person_one', 'person_two'));
 
+drop policy if exists "Pookie taps can be reset" on public.pookie_love_taps;
+create policy "Pookie taps can be reset"
+on public.pookie_love_taps
+for delete
+to anon
+using (person in ('person_one', 'person_two'));
+
 create index if not exists pookie_love_taps_person_idx
 on public.pookie_love_taps (person);
 

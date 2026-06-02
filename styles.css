@@ -334,16 +334,31 @@ input:focus-visible {
   font-weight: 800;
 }
 
-.ghost-button {
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ghost-button,
+.reset-button {
   min-height: 40px;
   border: 0;
   border-radius: 8px;
   padding: 0 16px;
   color: #ffffff;
-  background: linear-gradient(135deg, #f42590, #6c5ce7);
   font-weight: 950;
   cursor: pointer;
+}
+
+.ghost-button {
+  background: linear-gradient(135deg, #f42590, #6c5ce7);
   box-shadow: 0 10px 22px rgba(108, 92, 231, 0.22);
+}
+
+.reset-button {
+  background: linear-gradient(135deg, #ff735f, #18b7af);
+  box-shadow: 0 10px 22px rgba(255, 115, 95, 0.22);
 }
 
 .heart-burst {

@@ -28,6 +28,7 @@ const elements = {
   totalCount: document.querySelector("#totalCount"),
   cuteMessage: document.querySelector("#cuteMessage"),
   sync: document.querySelector("#syncButton"),
+  reset: document.querySelector("#resetButton"),
   buttons: {
     person_one: document.querySelector("#personOneButton"),
     person_two: document.querySelector("#personTwoButton"),
@@ -45,6 +46,8 @@ const elements = {
 let cloudReady = false;
 let cloudWritable = false;
 let state = loadLocalState();
+let resetArmed = false;
+let resetTimer = null;
 
 hydrateNames();
 render();
@@ -60,6 +63,7 @@ function attachEvents() {
     handleTap("person_two", event);
   });
   elements.sync.addEventListener("click", syncFromCloud);
+  elements.reset.addEventListener("click", resetCounters);
 
   for (const person of PEOPLE) {
     elements.names[person].addEventListener("input", () => {
@@ -67,6 +71,47 @@ function attachEvents() {
       saveLocalState();
       render();
     });
+  }
+}
+
+async function resetCounters() {
+  if (!resetArmed) {
+    resetArmed = true;
+    elements.reset.textContent = "Press again";
+    setStatus("Reset ready", "loading");
+    resetTimer = window.setTimeout(disarmReset, 3500);
+    return;
+  }
+
+  disarmReset();
+
+  state.counts = { person_one: 0, person_two: 0 };
+  state.lastTap = null;
+  saveLocalState();
+  render();
+  setStatus("Resetting memory", "loading");
+
+  const { error } = await supabase.from(TABLE_NAME).delete().in("person", PEOPLE);
+
+  if (error) {
+    cloudReady = false;
+    cloudWritable = false;
+    setStatus("Reset on this device", "local");
+    return;
+  }
+
+  cloudReady = true;
+  cloudWritable = true;
+  setStatus("Cloud reset done", "cloud");
+}
+
+function disarmReset() {
+  resetArmed = false;
+  elements.reset.textContent = "Reset";
+
+  if (resetTimer) {
+    window.clearTimeout(resetTimer);
+    resetTimer = null;
   }
 }
 
@@ -200,7 +245,7 @@ function maybeCelebrateMilestone() {
   if (total > 0 && total % 10 === 0) {
     const banner = document.createElement("div");
     banner.className = "milestone-toast";
-    banner.textContent = `${total.toLocaleString()} love taps. Cem and Daisy are unstoppable.`;
+    banner.textContent = `${total.toLocaleString()} love taps. You and Daisy are unstoppable.`;
     document.body.append(banner);
     window.setTimeout(() => banner.remove(), 2400);
   }
