@@ -217,6 +217,10 @@ h1 {
 
 .love-circle:focus-visible,
 .ghost-button:focus-visible,
+.reset-button:focus-visible,
+.pick-me-up-button:focus-visible,
+.game-start-button:focus-visible,
+.game-heart:focus-visible,
 input:focus-visible {
   outline: 4px solid rgba(255, 224, 102, 0.9);
   outline-offset: 4px;
@@ -256,6 +260,14 @@ input:focus-visible {
   font-weight: 1000;
   letter-spacing: 0;
   font-variant-numeric: tabular-nums;
+}
+
+.circle-count.is-large {
+  font-size: clamp(3rem, 8vw, 5rem);
+}
+
+.circle-count.is-huge {
+  font-size: clamp(2.25rem, 6vw, 3.75rem);
 }
 
 .circle-caption {
@@ -326,6 +338,160 @@ input:focus-visible {
   border: 1px solid rgba(255, 255, 255, 0.84);
   font-size: 0.84rem;
   font-weight: 900;
+}
+
+.pick-me-up,
+.mini-game {
+  margin-top: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.82);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.pick-me-up {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 18px;
+  align-items: center;
+  padding: clamp(18px, 3vw, 24px);
+}
+
+.section-kicker {
+  margin: 0 0 5px;
+  color: #c51f80;
+  font-size: 0.76rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+h2 {
+  margin: 0;
+  color: #55225b;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  letter-spacing: 0;
+}
+
+.pick-me-up p:last-child {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.pick-me-up-button,
+.game-start-button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 18px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #18b7af, #6c5ce7);
+  box-shadow: 0 10px 22px rgba(24, 183, 175, 0.22);
+  cursor: pointer;
+  font-weight: 950;
+  transition: transform 160ms ease;
+}
+
+.pick-me-up-button.is-popping {
+  transform: scale(0.96);
+}
+
+.mini-game {
+  padding: clamp(18px, 3vw, 24px);
+}
+
+.game-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.game-stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.game-stats span {
+  min-width: 76px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #5a225f;
+  background: rgba(255, 231, 244, 0.86);
+  font-size: 0.82rem;
+  font-weight: 850;
+  text-align: center;
+}
+
+.game-stats strong {
+  margin-left: 3px;
+  color: #159d97;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.game-arena {
+  position: relative;
+  height: clamp(250px, 44vw, 360px);
+  margin: 18px 0 14px;
+  border: 3px dashed rgba(244, 37, 144, 0.35);
+  border-radius: 8px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255, 224, 102, 0.45), transparent 20%),
+    radial-gradient(circle at 82% 72%, rgba(39, 217, 210, 0.38), transparent 24%),
+    rgba(255, 244, 250, 0.84);
+}
+
+.game-message {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: min(320px, calc(100% - 80px));
+  margin: 0;
+  transform: translate(-50%, -50%);
+  color: #70466e;
+  font-weight: 900;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.game-heart {
+  position: absolute;
+  left: calc(50% - 32px);
+  top: calc(50% - 32px);
+  width: 64px;
+  height: 64px;
+  display: none;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #ffffff;
+  background: linear-gradient(145deg, #ff4fa3, #ff735f);
+  box-shadow:
+    0 10px 0 rgba(173, 29, 112, 0.16),
+    0 16px 28px rgba(244, 37, 144, 0.3);
+  cursor: pointer;
+  font-size: 2rem;
+  transition: transform 100ms ease;
+}
+
+.game-arena.is-playing .game-heart {
+  display: grid;
+}
+
+.game-arena.is-playing .game-message {
+  opacity: 0.18;
+}
+
+.game-heart.is-caught {
+  transform: scale(0.78);
+}
+
+.game-start-button:disabled {
+  cursor: default;
+  opacity: 0.66;
 }
 
 .tiny-history {
@@ -431,7 +597,8 @@ input:focus-visible {
 
   .circle-grid,
   .name-controls,
-  .love-meter {
+  .love-meter,
+  .pick-me-up {
     grid-template-columns: 1fr;
   }
 

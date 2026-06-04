@@ -19,6 +19,15 @@ const CUTE_MESSAGES = [
   "Current pookie forecast: bright, silly, and very loved.",
   "A bad day cannot defeat this much cute.",
 ];
+const PICK_ME_UPS = [
+  "Official announcement: Daisy is extremely lovely and this has been independently verified.",
+  "Take a breath. I am proud of you, I love you, and you do not have to solve everything today.",
+  "Cyprus was proof that even ordinary moments become my favourites when I am with you.",
+  "You deserve softness, snacks, a cuddle, and absolutely no nonsense today.",
+  "Your smile is still my favourite notification.",
+  "You are doing better than your worried brain is giving you credit for.",
+];
+const GAME_SECONDS = 20;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -29,6 +38,15 @@ const elements = {
   cuteMessage: document.querySelector("#cuteMessage"),
   sync: document.querySelector("#syncButton"),
   reset: document.querySelector("#resetButton"),
+  pickMeUp: document.querySelector("#pickMeUpButton"),
+  pickMeUpMessage: document.querySelector("#pickMeUpMessage"),
+  gameArena: document.querySelector("#gameArena"),
+  gameHeart: document.querySelector("#gameHeart"),
+  gameMessage: document.querySelector("#gameMessage"),
+  gameStart: document.querySelector("#gameStartButton"),
+  gameTime: document.querySelector("#gameTime"),
+  gameScore: document.querySelector("#gameScore"),
+  gameBest: document.querySelector("#gameBest"),
   buttons: {
     person_one: document.querySelector("#personOneButton"),
     person_two: document.querySelector("#personTwoButton"),
@@ -48,6 +66,11 @@ let cloudWritable = false;
 let state = loadLocalState();
 let resetArmed = false;
 let resetTimer = null;
+let pickMeUpIndex = 0;
+let gameActive = false;
+let gameScore = 0;
+let gameTime = GAME_SECONDS;
+let gameTimer = null;
 
 hydrateNames();
 render();
@@ -64,6 +87,9 @@ function attachEvents() {
   });
   elements.sync.addEventListener("click", syncFromCloud);
   elements.reset.addEventListener("click", resetCounters);
+  elements.pickMeUp.addEventListener("click", showPickMeUp);
+  elements.gameStart.addEventListener("click", startGame);
+  elements.gameHeart.addEventListener("click", catchHeart);
 
   for (const person of PEOPLE) {
     elements.names[person].addEventListener("input", () => {
@@ -72,6 +98,81 @@ function attachEvents() {
       render();
     });
   }
+}
+
+function showPickMeUp() {
+  elements.pickMeUpMessage.textContent = PICK_ME_UPS[pickMeUpIndex % PICK_ME_UPS.length];
+  pickMeUpIndex += 1;
+  elements.pickMeUp.classList.add("is-popping");
+  window.setTimeout(() => elements.pickMeUp.classList.remove("is-popping"), 180);
+}
+
+function startGame() {
+  if (gameActive) {
+    return;
+  }
+
+  gameActive = true;
+  gameScore = 0;
+  gameTime = GAME_SECONDS;
+  elements.gameScore.textContent = "0";
+  elements.gameTime.textContent = String(gameTime);
+  elements.gameMessage.textContent = "Go, go, go!";
+  elements.gameStart.textContent = "Love is flying";
+  elements.gameStart.disabled = true;
+  elements.gameArena.classList.add("is-playing");
+  moveGameHeart();
+
+  gameTimer = window.setInterval(() => {
+    gameTime -= 1;
+    elements.gameTime.textContent = String(gameTime);
+
+    if (gameTime <= 0) {
+      finishGame();
+    }
+  }, 1000);
+}
+
+function catchHeart() {
+  if (!gameActive) {
+    return;
+  }
+
+  gameScore += 1;
+  elements.gameScore.textContent = String(gameScore);
+  elements.gameHeart.classList.add("is-caught");
+  window.setTimeout(() => elements.gameHeart.classList.remove("is-caught"), 120);
+  moveGameHeart();
+}
+
+function moveGameHeart() {
+  const padding = 18;
+  const maxX = Math.max(padding, elements.gameArena.clientWidth - elements.gameHeart.offsetWidth - padding);
+  const maxY = Math.max(padding, elements.gameArena.clientHeight - elements.gameHeart.offsetHeight - padding);
+  const x = padding + Math.random() * (maxX - padding);
+  const y = padding + Math.random() * (maxY - padding);
+
+  elements.gameHeart.style.left = `${x}px`;
+  elements.gameHeart.style.top = `${y}px`;
+}
+
+function finishGame() {
+  window.clearInterval(gameTimer);
+  gameTimer = null;
+  gameActive = false;
+  elements.gameArena.classList.remove("is-playing");
+  elements.gameStart.disabled = false;
+  elements.gameStart.textContent = "Play again";
+
+  if (gameScore > state.gameBest) {
+    state.gameBest = gameScore;
+    saveLocalState();
+    elements.gameBest.textContent = String(state.gameBest);
+    elements.gameMessage.textContent = `New best: ${gameScore}! Daisy has elite heart-catching skills.`;
+    return;
+  }
+
+  elements.gameMessage.textContent = `You caught ${gameScore} hearts. Very impressive pookie work.`;
 }
 
 async function resetCounters() {
@@ -218,12 +319,15 @@ function render() {
   const total = state.counts.person_one + state.counts.person_two;
   elements.totalCount.textContent = total.toLocaleString();
   elements.cuteMessage.textContent = CUTE_MESSAGES[total % CUTE_MESSAGES.length];
+  elements.gameBest.textContent = String(state.gameBest);
 
   for (const person of PEOPLE) {
     const displayName = state.names[person] || DEFAULT_NAMES[person];
     elements.buttons[person].querySelector(".circle-name").textContent = displayName;
     elements.names[person].value = displayName;
     elements.counts[person].textContent = state.counts[person].toLocaleString();
+    elements.counts[person].classList.toggle("is-large", state.counts[person] >= 1000);
+    elements.counts[person].classList.toggle("is-huge", state.counts[person] >= 100000);
   }
 
   if (!state.lastTap) {
@@ -274,12 +378,14 @@ function loadLocalState() {
         ),
       },
       lastTap: saved?.lastTap || null,
+      gameBest: Number(saved?.gameBest) || 0,
     };
   } catch {
     return {
       counts: { person_one: 0, person_two: 0 },
       names: { ...DEFAULT_NAMES },
       lastTap: null,
+      gameBest: 0,
     };
   }
 }
