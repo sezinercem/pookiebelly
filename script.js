@@ -20,6 +20,8 @@ const CUTE_MESSAGES = [
   "A bad day cannot defeat this much cute.",
 ];
 const PICK_ME_UPS = [
+  "You have the smelliest belly.",
+  "You will always be the love of my life.",
   "Official announcement: Daisy is extremely lovely and this has been independently verified.",
   "Take a breath. I am proud of you, I love you, and you do not have to solve everything today.",
   "Cyprus was proof that even ordinary moments become my favourites when I am with you.",
