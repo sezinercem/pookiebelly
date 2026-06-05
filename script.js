@@ -5,6 +5,7 @@ const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpreWRjcG5tZWF3Z3hlbmVrdnp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MzA5NzksImV4cCI6MjA5NjAwNjk3OX0.wjzyEUZZWAmnDxads4qqwT9cDQY1RmIaf2zuCdj_fV8";
 
 const TABLE_NAME = "pookie_love_taps";
+const MESSAGE_TABLE_NAME = "pookie_messages";
 const PEOPLE = ["person_one", "person_two"];
 const DEFAULT_NAMES = {
   person_one: "Cem",
@@ -49,6 +50,11 @@ const elements = {
   gameTime: document.querySelector("#gameTime"),
   gameScore: document.querySelector("#gameScore"),
   gameBest: document.querySelector("#gameBest"),
+  messageForm: document.querySelector("#messageForm"),
+  messageFrom: document.querySelector("#messageFrom"),
+  messageTo: document.querySelector("#messageTo"),
+  messageText: document.querySelector("#messageText"),
+  messageList: document.querySelector("#messageList"),
   buttons: {
     person_one: document.querySelector("#personOneButton"),
     person_two: document.querySelector("#personTwoButton"),
@@ -79,6 +85,7 @@ render();
 attachEvents();
 startRealtime();
 syncFromCloud();
+syncMessages();
 
 function attachEvents() {
   elements.buttons.person_one.addEventListener("click", (event) => {
@@ -92,6 +99,8 @@ function attachEvents() {
   elements.pickMeUp.addEventListener("click", showPickMeUp);
   elements.gameStart.addEventListener("click", startGame);
   elements.gameHeart.addEventListener("click", catchHeart);
+  elements.messageFrom.addEventListener("change", syncMessageRecipient);
+  elements.messageForm.addEventListener("submit", sendMessage);
 
   for (const person of PEOPLE) {
     elements.names[person].addEventListener("input", () => {
@@ -107,6 +116,45 @@ function showPickMeUp() {
   pickMeUpIndex += 1;
   elements.pickMeUp.classList.add("is-popping");
   window.setTimeout(() => elements.pickMeUp.classList.remove("is-popping"), 180);
+}
+
+function syncMessageRecipient() {
+  elements.messageTo.value = elements.messageFrom.value === "Cem" ? "Daisy" : "Cem";
+}
+
+async function sendMessage(event) {
+  event.preventDefault();
+
+  const body = elements.messageText.value.trim();
+  if (!body) {
+    elements.messageText.focus();
+    return;
+  }
+
+  const message = {
+    from_name: elements.messageFrom.value,
+    to_name: elements.messageTo.value,
+    body,
+    created_at: new Date().toISOString(),
+  };
+  const messages = [message, ...loadLocalMessages()].slice(0, 12);
+  saveLocalMessages(messages);
+  renderMessages(messages);
+  elements.messageText.value = "";
+
+  const { error } = await supabase.from(MESSAGE_TABLE_NAME).insert({
+    from_name: message.from_name,
+    to_name: message.to_name,
+    body: message.body,
+  });
+
+  if (error) {
+    setStatus("Message saved here", "local");
+    return;
+  }
+
+  setStatus("Message delivered", "cloud");
+  await syncMessages({ quiet: true });
 }
 
 function startGame() {
@@ -315,6 +363,58 @@ function startRealtime() {
       () => syncFromCloud({ quiet: true }),
     )
     .subscribe();
+
+  supabase
+    .channel("pookie-messages")
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: MESSAGE_TABLE_NAME },
+      () => syncMessages({ quiet: true }),
+    )
+    .subscribe();
+}
+
+async function syncMessages(options = {}) {
+  const { data, error } = await supabase
+    .from(MESSAGE_TABLE_NAME)
+    .select("from_name, to_name, body, created_at")
+    .order("created_at", { ascending: false })
+    .limit(8);
+
+  if (error) {
+    renderMessages(loadLocalMessages());
+    if (!options.quiet) {
+      setStatus("Messages local", "local");
+    }
+    return;
+  }
+
+  saveLocalMessages(data || []);
+  renderMessages(data || []);
+}
+
+function renderMessages(messages) {
+  const visibleMessages = messages.slice(0, 6);
+
+  if (!visibleMessages.length) {
+    elements.messageList.innerHTML =
+      '<p class="empty-message">No messages yet. Be the first menace of romance.</p>';
+    return;
+  }
+
+  elements.messageList.innerHTML = visibleMessages
+    .map((message) => {
+      const date = new Date(message.created_at).toLocaleString([], {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+      return `<article class="message-card">
+        <div><strong>${escapeHtml(message.from_name)}</strong><span>to ${escapeHtml(message.to_name)}</span></div>
+        <p>${escapeHtml(message.body)}</p>
+        <time>${date}</time>
+      </article>`;
+    })
+    .join("");
 }
 
 function render() {
@@ -402,6 +502,27 @@ function migrateSavedName(savedName, oldDefault, newDefault) {
 
 function saveLocalState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadLocalMessages() {
+  try {
+    return JSON.parse(localStorage.getItem("pookie-messages")) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalMessages(messages) {
+  localStorage.setItem("pookie-messages", JSON.stringify(messages));
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function setStatus(text, mode) {

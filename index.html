@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pookie Smelly Belly</title>
     <link rel="preconnect" href="https://jkydcpnmeawgxenekvzt.supabase.co" />
-    <link rel="stylesheet" href="styles.css?v=20260604-2" />
+    <link rel="stylesheet" href="styles.css?v=20260606-1" />
   </head>
   <body>
     <main class="app-shell">
@@ -67,6 +67,42 @@
           <button class="pick-me-up-button" id="pickMeUpButton" type="button">Cheer me up</button>
         </section>
 
+        <section class="message-drop" aria-labelledby="messageDropTitle">
+          <div class="message-heading">
+            <div>
+              <p class="section-kicker">Little love postbox</p>
+              <h2 id="messageDropTitle">Leave each other a message</h2>
+            </div>
+            <a class="hub-link" href="hub.html">Open Love Hub</a>
+          </div>
+
+          <form class="message-form" id="messageForm">
+            <label>
+              <span>From</span>
+              <select id="messageFrom">
+                <option value="Cem">Cem</option>
+                <option value="Daisy">Daisy</option>
+              </select>
+            </label>
+            <label>
+              <span>To</span>
+              <select id="messageTo">
+                <option value="Daisy">Daisy</option>
+                <option value="Cem">Cem</option>
+              </select>
+            </label>
+            <label class="message-field">
+              <span>Message</span>
+              <textarea id="messageText" maxlength="260" rows="4" placeholder="Write something sweet..."></textarea>
+            </label>
+            <button class="message-send-button" type="submit">Send message</button>
+          </form>
+
+          <div class="message-list" id="messageList" aria-live="polite">
+            <p class="empty-message">No messages yet. Be the first menace of romance.</p>
+          </div>
+        </section>
+
         <section class="mini-game" aria-labelledby="gameTitle">
           <div class="game-heading">
             <div>
@@ -98,6 +134,6 @@
       </section>
     </main>
 
-    <script type="module" src="script.js?v=20260604-3"></script>
+    <script type="module" src="script.js?v=20260606-1"></script>
   </body>
 </html>

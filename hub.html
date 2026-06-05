@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cem and Daisy Love Hub</title>
+    <link rel="preconnect" href="https://jkydcpnmeawgxenekvzt.supabase.co" />
+    <link rel="stylesheet" href="styles.css?v=20260606-1" />
+  </head>
+  <body>
+    <main class="app-shell hub-shell">
+      <section class="love-board hub-board" aria-label="Cem and Daisy Love Hub">
+        <div class="hub-hero-top">
+          <p class="kicker">Pookie Smelly Belly</p>
+          <a class="back-link" href="index.html">Back to love taps</a>
+        </div>
+
+        <h1>Love Hub</h1>
+        <p class="hub-intro">
+          A bigger little corner for messages, memories, emergency sweetness, and future plans.
+        </p>
+
+        <section class="hub-dashboard" aria-label="Love hub dashboard">
+          <article>
+            <span>Cem taps</span>
+            <strong id="hubCemCount">0</strong>
+          </article>
+          <article>
+            <span>Daisy taps</span>
+            <strong id="hubDaisyCount">0</strong>
+          </article>
+          <article>
+            <span>Total love</span>
+            <strong id="hubTotalCount">0</strong>
+          </article>
+        </section>
+
+        <section class="hub-grid">
+          <article class="hub-panel">
+            <p class="section-kicker">Shared postbox</p>
+            <h2>Latest messages</h2>
+            <div class="hub-message-list" id="hubMessageList">
+              <p class="empty-message">No messages yet.</p>
+            </div>
+          </article>
+
+          <article class="hub-panel">
+            <p class="section-kicker">Send from the hub</p>
+            <h2>Drop a love note</h2>
+            <form class="hub-message-form" id="hubMessageForm">
+              <select id="hubMessageFrom">
+                <option value="Cem">Cem</option>
+                <option value="Daisy">Daisy</option>
+              </select>
+              <textarea id="hubMessageText" maxlength="300" rows="5" placeholder="Leave something for later..."></textarea>
+              <button class="message-send-button" type="submit">Send to the postbox</button>
+            </form>
+          </article>
+        </section>
+
+        <section class="memory-vault" aria-labelledby="memoryVaultTitle">
+          <div>
+            <p class="section-kicker">Cyprus memory vault</p>
+            <h2 id="memoryVaultTitle">Remember this when the day gets heavy</h2>
+          </div>
+          <div class="memory-grid">
+            <article>
+              <strong>The warmth</strong>
+              <p>That feeling of being somewhere sunny together, with the world feeling softer for a bit.</p>
+            </article>
+            <article>
+              <strong>The laughs</strong>
+              <p>The small stupid moments that somehow become the exact things you miss later.</p>
+            </article>
+            <article>
+              <strong>The two of you</strong>
+              <p>Proof that ordinary time can turn into a favourite memory when it belongs to Cem and Daisy.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="date-mission" aria-labelledby="dateMissionTitle">
+          <div>
+            <p class="section-kicker">Future plan generator</p>
+            <h2 id="dateMissionTitle">Tiny date mission</h2>
+            <p id="dateMissionText">Press the button and the Love Hub will pick something cute.</p>
+          </div>
+          <button class="pick-me-up-button" id="dateMissionButton" type="button">Pick a mission</button>
+        </section>
+
+        <section class="reason-wall" aria-label="Reasons Daisy is loved">
+          <p class="section-kicker">Certified evidence</p>
+          <h2>Reasons Daisy is loved</h2>
+          <div class="reason-grid">
+            <span>Because you make everything feel brighter.</span>
+            <span>Because your bad days still deserve gentleness.</span>
+            <span>Because I would choose you in every version of the story.</span>
+            <span>Because you have the smelliest belly.</span>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="hub.js?v=20260606-1"></script>
+  </body>
+</html>
